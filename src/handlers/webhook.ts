@@ -1,9 +1,18 @@
 import { Env } from '../index';
 import { WebhookPayload } from '../types/planning-center';
 import { isValidWebhookPayload } from '../utils/validation';
+import { CodaClient } from '../utils/coda-client';
 
 export class WebhookHandler {
-  constructor(private env: Env) {}
+  private codaClient: CodaClient;
+
+  constructor(private env: Env) {
+    this.codaClient = new CodaClient(
+      env.CODA_API_TOKEN,
+      env.CODA_DOC_ID,
+      env.CODA_TABLE_ID
+    );
+  }
 
   async handle(payload: any, ctx: ExecutionContext): Promise<any> {
     if (!isValidWebhookPayload(payload)) {
@@ -11,6 +20,16 @@ export class WebhookHandler {
     }
 
     console.log(`Processing webhook: ${payload.action} for org ${payload.organization_id}`);
+    
+    // Create row in Coda for all webhook events
+    try {
+      const rowData = this.codaClient.formatWebhookForCoda(payload);
+      await this.codaClient.createRow(rowData);
+      console.log('Successfully created row in Coda');
+    } catch (error) {
+      console.error('Failed to create Coda row:', error);
+      // Don't throw - we still want to process the webhook even if Coda fails
+    }
 
     switch (payload.action) {
       case 'group.created':

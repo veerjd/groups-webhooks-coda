@@ -9,8 +9,13 @@ name = "planning-center-groups-webhook-prod"
 name = "planning-center-groups-webhook-staging"
 
 # Environment variables (set these via wrangler secret)
-# [vars]
-# WEBHOOK_SECRET = "your-webhook-secret"
+# wrangler secret put WEBHOOK_SECRET
+# wrangler secret put CODA_API_TOKEN
+# 
+# Set these as plain text vars or secrets:
+[vars]
+CODA_DOC_ID = "YOUR_CODA_DOC_ID"
+CODA_TABLE_ID = "YOUR_CODA_TABLE_ID"
 
 # KV Namespaces (if needed for storing webhook data)
 # [[kv_namespaces]]

@@ -5,6 +5,9 @@ import { ErrorResponse, SuccessResponse } from './utils/responses';
 export interface Env {
   WEBHOOK_SECRET?: string;
   WEBHOOKS_KV?: KVNamespace;
+  CODA_API_TOKEN: string;
+  CODA_DOC_ID: string;
+  CODA_TABLE_ID: string;
 }
 
 export default {
