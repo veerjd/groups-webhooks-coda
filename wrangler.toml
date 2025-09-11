@@ -1,0 +1,30 @@
+name = "planning-center-groups-webhook"
+main = "src/index.ts"
+compatibility_date = "2024-12-01"
+
+[env.production]
+name = "planning-center-groups-webhook-prod"
+
+[env.staging]
+name = "planning-center-groups-webhook-staging"
+
+# Environment variables (set these via wrangler secret)
+# [vars]
+# WEBHOOK_SECRET = "your-webhook-secret"
+
+# KV Namespaces (if needed for storing webhook data)
+# [[kv_namespaces]]
+# binding = "WEBHOOKS_KV"
+# id = "your-kv-namespace-id"
+
+# Durable Objects (if needed for stateful processing)
+# [[durable_objects.bindings]]
+# name = "WEBHOOK_PROCESSOR"
+# class_name = "WebhookProcessor"
+
+# Rate limiting
+# [[unsafe.bindings]]
+# name = "RATE_LIMITER"
+# type = "ratelimit"
+# namespace_id = "1"
+# simple = { limit = 100, period = 60 }
