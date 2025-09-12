@@ -1,4 +1,4 @@
-name = "planning-center-groups-webhook"
+name = "groups-webhooks-coda"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
