@@ -2,6 +2,7 @@ import { Env } from '../index';
 import { WebhookPayload } from '../types/planning-center';
 import { isValidWebhookPayload } from '../utils/validation';
 import { createCodaClient } from '../utils/coda-client';
+import { Logger } from '../utils/logger';
 
 export function createWebhookHandler(env: Env) {
   const codaClient = createCodaClient(
@@ -12,7 +13,8 @@ export function createWebhookHandler(env: Env) {
 
   const handleGroupCreated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const group = payload.payload.data;
-    console.log(`New group created: ${group.attributes.name} (ID: ${group.id})`);
+    Logger.logDetailedPayload('Group Created - Full Data', group);
+    console.log(`New group created: ${group.attributes.name} (ID: ${group.id})`)
     
     if (env.WEBHOOKS_KV) {
       await env.WEBHOOKS_KV.put(
@@ -32,7 +34,8 @@ export function createWebhookHandler(env: Env) {
 
   const handleGroupUpdated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const group = payload.payload.data;
-    console.log(`Group updated: ${group.attributes.name} (ID: ${group.id})`);
+    Logger.logDetailedPayload('Group Updated - Full Data', group);
+    console.log(`Group updated: ${group.attributes.name} (ID: ${group.id})`)
     
     return {
       action: 'group.updated',
@@ -44,7 +47,8 @@ export function createWebhookHandler(env: Env) {
 
   const handleGroupDeleted = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const group = payload.payload.data;
-    console.log(`Group deleted: ID ${group.id}`);
+    Logger.logDetailedPayload('Group Deleted - Full Data', group);
+    console.log(`Group deleted: ID ${group.id}`)
     
     if (env.WEBHOOKS_KV) {
       await env.WEBHOOKS_KV.delete(`group:${group.id}`);
@@ -59,7 +63,8 @@ export function createWebhookHandler(env: Env) {
 
   const handleMembershipCreated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const membership = payload.payload.data;
-    console.log(`New membership created: ID ${membership.id}`);
+    Logger.logDetailedPayload('Membership Created - Full Data', membership);
+    console.log(`New membership created: ID ${membership.id}`)
     
     return {
       action: 'membership.created',
@@ -71,7 +76,8 @@ export function createWebhookHandler(env: Env) {
 
   const handleMembershipUpdated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const membership = payload.payload.data;
-    console.log(`Membership updated: ID ${membership.id}`);
+    Logger.logDetailedPayload('Membership Updated - Full Data', membership);
+    console.log(`Membership updated: ID ${membership.id}`)
     
     return {
       action: 'membership.updated',
@@ -82,7 +88,8 @@ export function createWebhookHandler(env: Env) {
 
   const handleMembershipDeleted = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const membership = payload.payload.data;
-    console.log(`Membership deleted: ID ${membership.id}`);
+    Logger.logDetailedPayload('Membership Deleted - Full Data', membership);
+    console.log(`Membership deleted: ID ${membership.id}`)
     
     return {
       action: 'membership.deleted',
@@ -93,7 +100,8 @@ export function createWebhookHandler(env: Env) {
 
   const handleAttendanceCreated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const attendance = payload.payload.data;
-    console.log(`Attendance recorded: ID ${attendance.id}`);
+    Logger.logDetailedPayload('Attendance Created - Full Data', attendance);
+    console.log(`Attendance recorded: ID ${attendance.id}`)
     
     return {
       action: 'attendance.created',
@@ -104,7 +112,8 @@ export function createWebhookHandler(env: Env) {
 
   const handleEventCreated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const event = payload.payload.data;
-    console.log(`Event created: ${event.attributes.name} (ID: ${event.id})`);
+    Logger.logDetailedPayload('Event Created - Full Data', event);
+    console.log(`Event created: ${event.attributes.name} (ID: ${event.id})`)
     
     return {
       action: 'event.created',
@@ -116,7 +125,8 @@ export function createWebhookHandler(env: Env) {
 
   const handleEventUpdated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const event = payload.payload.data;
-    console.log(`Event updated: ${event.attributes.name} (ID: ${event.id})`);
+    Logger.logDetailedPayload('Event Updated - Full Data', event);
+    console.log(`Event updated: ${event.attributes.name} (ID: ${event.id})`)
     
     return {
       action: 'event.updated',
@@ -128,7 +138,8 @@ export function createWebhookHandler(env: Env) {
 
   const handleEventDeleted = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const event = payload.payload.data;
-    console.log(`Event deleted: ID ${event.id}`);
+    Logger.logDetailedPayload('Event Deleted - Full Data', event);
+    console.log(`Event deleted: ID ${event.id}`)
     
     return {
       action: 'event.deleted',
@@ -142,7 +153,16 @@ export function createWebhookHandler(env: Env) {
       throw new Error('Invalid webhook payload structure');
     }
 
-    console.log(`Processing webhook: ${payload.action} for org ${payload.organization_id}`);
+    Logger.logWebhookProcessing(payload.action, payload.organization_id);
+    
+    // Log full payload details including relationships and included data
+    if (payload.payload?.included) {
+      Logger.logDetailedPayload('Included Relationships Data', payload.payload.included);
+    }
+    // Log any additional metadata if present in the payload structure
+    if ((payload as any).meta) {
+      Logger.logDetailedPayload('Webhook Metadata', (payload as any).meta);
+    }
     
     // Create row in Coda for all webhook events
     try {
@@ -150,7 +170,7 @@ export function createWebhookHandler(env: Env) {
       await codaClient.createRow(rowData);
       console.log('Successfully created row in Coda');
     } catch (error) {
-      console.error('Failed to create Coda row:', error);
+      Logger.logWebhookError(error, 'Coda Row Creation Failed');
       // Don't throw - we still want to process the webhook even if Coda fails
     }
 

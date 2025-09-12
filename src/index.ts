@@ -1,6 +1,7 @@
 import { createWebhookHandler } from './handlers/webhook';
 import { validateWebhookSignature } from './utils/validation';
 import { createErrorResponse, createSuccessResponse } from './utils/responses';
+import { Logger } from './utils/logger';
 
 export interface Env {
   WEBHOOK_SECRET?: string;
@@ -32,17 +33,25 @@ export default {
       if (env.WEBHOOK_SECRET) {
         const signature = request.headers.get('X-PCO-Webhook-Signature');
         if (!signature || !validateWebhookSignature(rawBody, signature, env.WEBHOOK_SECRET)) {
+          Logger.logWebhookError('Invalid signature', 'Authentication Failed');
           return createErrorResponse('Unauthorized', 401);
         }
       }
 
       const payload = JSON.parse(rawBody);
+      
+      // Log the full webhook payload and request details
+      Logger.logWebhookReceived(request, payload);
+      
       const handler = createWebhookHandler(env);
       const result = await handler.handle(payload, ctx);
       
+      // Log successful processing
+      Logger.logWebhookSuccess(result);
+      
       return createSuccessResponse(result);
     } catch (error) {
-      console.error('Webhook processing error:', error);
+      Logger.logWebhookError(error, 'Webhook Processing Failed');
       
       if (error instanceof SyntaxError) {
         return createErrorResponse('Invalid JSON payload', 400);
