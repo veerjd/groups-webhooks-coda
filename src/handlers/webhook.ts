@@ -1,69 +1,21 @@
 import { Env } from '../index';
 import { WebhookPayload } from '../types/planning-center';
 import { isValidWebhookPayload } from '../utils/validation';
-import { CodaClient } from '../utils/coda-client';
+import { createCodaClient } from '../utils/coda-client';
 
-export class WebhookHandler {
-  private codaClient: CodaClient;
+export function createWebhookHandler(env: Env) {
+  const codaClient = createCodaClient(
+    env.CODA_API_TOKEN,
+    env.CODA_DOC_ID,
+    env.CODA_TABLE_ID
+  );
 
-  constructor(private env: Env) {
-    this.codaClient = new CodaClient(
-      env.CODA_API_TOKEN,
-      env.CODA_DOC_ID,
-      env.CODA_TABLE_ID
-    );
-  }
-
-  async handle(payload: any, ctx: ExecutionContext): Promise<any> {
-    if (!isValidWebhookPayload(payload)) {
-      throw new Error('Invalid webhook payload structure');
-    }
-
-    console.log(`Processing webhook: ${payload.action} for org ${payload.organization_id}`);
-    
-    // Create row in Coda for all webhook events
-    try {
-      const rowData = this.codaClient.formatWebhookForCoda(payload);
-      await this.codaClient.createRow(rowData);
-      console.log('Successfully created row in Coda');
-    } catch (error) {
-      console.error('Failed to create Coda row:', error);
-      // Don't throw - we still want to process the webhook even if Coda fails
-    }
-
-    switch (payload.action) {
-      case 'group.created':
-        return await this.handleGroupCreated(payload, ctx);
-      case 'group.updated':
-        return await this.handleGroupUpdated(payload, ctx);
-      case 'group.deleted':
-        return await this.handleGroupDeleted(payload, ctx);
-      case 'membership.created':
-        return await this.handleMembershipCreated(payload, ctx);
-      case 'membership.updated':
-        return await this.handleMembershipUpdated(payload, ctx);
-      case 'membership.deleted':
-        return await this.handleMembershipDeleted(payload, ctx);
-      case 'attendance.created':
-        return await this.handleAttendanceCreated(payload, ctx);
-      case 'event.created':
-        return await this.handleEventCreated(payload, ctx);
-      case 'event.updated':
-        return await this.handleEventUpdated(payload, ctx);
-      case 'event.deleted':
-        return await this.handleEventDeleted(payload, ctx);
-      default:
-        console.warn(`Unhandled webhook action: ${payload.action}`);
-        return { message: `Webhook received but action '${payload.action}' is not handled` };
-    }
-  }
-
-  private async handleGroupCreated(payload: WebhookPayload, _ctx: ExecutionContext) {
+  const handleGroupCreated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const group = payload.payload.data;
     console.log(`New group created: ${group.attributes.name} (ID: ${group.id})`);
     
-    if (this.env.WEBHOOKS_KV) {
-      await this.env.WEBHOOKS_KV.put(
+    if (env.WEBHOOKS_KV) {
+      await env.WEBHOOKS_KV.put(
         `group:${group.id}`,
         JSON.stringify(group),
         { expirationTtl: 86400 }
@@ -76,9 +28,9 @@ export class WebhookHandler {
       groupName: group.attributes.name,
       processed: true
     };
-  }
+  };
 
-  private async handleGroupUpdated(payload: WebhookPayload, _ctx: ExecutionContext) {
+  const handleGroupUpdated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const group = payload.payload.data;
     console.log(`Group updated: ${group.attributes.name} (ID: ${group.id})`);
     
@@ -88,14 +40,14 @@ export class WebhookHandler {
       groupName: group.attributes.name,
       processed: true
     };
-  }
+  };
 
-  private async handleGroupDeleted(payload: WebhookPayload, _ctx: ExecutionContext) {
+  const handleGroupDeleted = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const group = payload.payload.data;
     console.log(`Group deleted: ID ${group.id}`);
     
-    if (this.env.WEBHOOKS_KV) {
-      await this.env.WEBHOOKS_KV.delete(`group:${group.id}`);
+    if (env.WEBHOOKS_KV) {
+      await env.WEBHOOKS_KV.delete(`group:${group.id}`);
     }
     
     return {
@@ -103,9 +55,9 @@ export class WebhookHandler {
       groupId: group.id,
       processed: true
     };
-  }
+  };
 
-  private async handleMembershipCreated(payload: WebhookPayload, _ctx: ExecutionContext) {
+  const handleMembershipCreated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const membership = payload.payload.data;
     console.log(`New membership created: ID ${membership.id}`);
     
@@ -115,9 +67,9 @@ export class WebhookHandler {
       role: membership.attributes.role,
       processed: true
     };
-  }
+  };
 
-  private async handleMembershipUpdated(payload: WebhookPayload, _ctx: ExecutionContext) {
+  const handleMembershipUpdated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const membership = payload.payload.data;
     console.log(`Membership updated: ID ${membership.id}`);
     
@@ -126,9 +78,9 @@ export class WebhookHandler {
       membershipId: membership.id,
       processed: true
     };
-  }
+  };
 
-  private async handleMembershipDeleted(payload: WebhookPayload, _ctx: ExecutionContext) {
+  const handleMembershipDeleted = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const membership = payload.payload.data;
     console.log(`Membership deleted: ID ${membership.id}`);
     
@@ -137,9 +89,9 @@ export class WebhookHandler {
       membershipId: membership.id,
       processed: true
     };
-  }
+  };
 
-  private async handleAttendanceCreated(payload: WebhookPayload, _ctx: ExecutionContext) {
+  const handleAttendanceCreated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const attendance = payload.payload.data;
     console.log(`Attendance recorded: ID ${attendance.id}`);
     
@@ -148,9 +100,9 @@ export class WebhookHandler {
       attendanceId: attendance.id,
       processed: true
     };
-  }
+  };
 
-  private async handleEventCreated(payload: WebhookPayload, _ctx: ExecutionContext) {
+  const handleEventCreated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const event = payload.payload.data;
     console.log(`Event created: ${event.attributes.name} (ID: ${event.id})`);
     
@@ -160,9 +112,9 @@ export class WebhookHandler {
       eventName: event.attributes.name,
       processed: true
     };
-  }
+  };
 
-  private async handleEventUpdated(payload: WebhookPayload, _ctx: ExecutionContext) {
+  const handleEventUpdated = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const event = payload.payload.data;
     console.log(`Event updated: ${event.attributes.name} (ID: ${event.id})`);
     
@@ -172,9 +124,9 @@ export class WebhookHandler {
       eventName: event.attributes.name,
       processed: true
     };
-  }
+  };
 
-  private async handleEventDeleted(payload: WebhookPayload, _ctx: ExecutionContext) {
+  const handleEventDeleted = async (payload: WebhookPayload, _ctx: ExecutionContext) => {
     const event = payload.payload.data;
     console.log(`Event deleted: ID ${event.id}`);
     
@@ -183,5 +135,53 @@ export class WebhookHandler {
       eventId: event.id,
       processed: true
     };
-  }
+  };
+
+  const handle = async (payload: any, ctx: ExecutionContext): Promise<any> => {
+    if (!isValidWebhookPayload(payload)) {
+      throw new Error('Invalid webhook payload structure');
+    }
+
+    console.log(`Processing webhook: ${payload.action} for org ${payload.organization_id}`);
+    
+    // Create row in Coda for all webhook events
+    try {
+      const rowData = codaClient.formatWebhookForCoda(payload);
+      await codaClient.createRow(rowData);
+      console.log('Successfully created row in Coda');
+    } catch (error) {
+      console.error('Failed to create Coda row:', error);
+      // Don't throw - we still want to process the webhook even if Coda fails
+    }
+
+    switch (payload.action) {
+      case 'group.created':
+        return await handleGroupCreated(payload, ctx);
+      case 'group.updated':
+        return await handleGroupUpdated(payload, ctx);
+      case 'group.deleted':
+        return await handleGroupDeleted(payload, ctx);
+      case 'membership.created':
+        return await handleMembershipCreated(payload, ctx);
+      case 'membership.updated':
+        return await handleMembershipUpdated(payload, ctx);
+      case 'membership.deleted':
+        return await handleMembershipDeleted(payload, ctx);
+      case 'attendance.created':
+        return await handleAttendanceCreated(payload, ctx);
+      case 'event.created':
+        return await handleEventCreated(payload, ctx);
+      case 'event.updated':
+        return await handleEventUpdated(payload, ctx);
+      case 'event.deleted':
+        return await handleEventDeleted(payload, ctx);
+      default:
+        console.warn(`Unhandled webhook action: ${payload.action}`);
+        return { message: `Webhook received but action '${payload.action}' is not handled` };
+    }
+  };
+
+  return {
+    handle
+  };
 }

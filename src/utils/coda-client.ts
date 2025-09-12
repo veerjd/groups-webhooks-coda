@@ -1,63 +1,14 @@
 import { CodaRowData, CodaApiResponse } from '../types/coda';
 import { WebhookPayload } from '../types/planning-center';
 
-export class CodaClient {
-  private baseUrl = 'https://coda.io/apis/v1';
-  
-  constructor(
-    private apiToken: string,
-    private docId: string,
-    private tableId: string
-  ) {}
+export function createCodaClient(
+  apiToken: string,
+  docId: string,
+  tableId: string
+) {
+  const baseUrl = 'https://coda.io/apis/v1';
 
-  async createRow(rowData: CodaRowData): Promise<CodaApiResponse> {
-    const url = `${this.baseUrl}/docs/${this.docId}/tables/${this.tableId}/rows`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${this.apiToken}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        rows: [rowData]
-      }),
-    });
-
-    if (!response.ok) {
-      const error = await response.text();
-      throw new Error(`Coda API error: ${response.status} - ${error}`);
-    }
-
-    return response.json();
-  }
-
-  formatWebhookForCoda(webhook: WebhookPayload): CodaRowData {
-    const data = webhook.payload.data;
-    const timestamp = new Date(webhook.created_at).toISOString();
-    
-    const baseColumns = [
-      { column: 'Webhook ID', value: webhook.id },
-      { column: 'Action', value: webhook.action },
-      { column: 'Organization ID', value: webhook.organization_id },
-      { column: 'Timestamp', value: timestamp },
-      { column: 'Resource Type', value: data.type },
-      { column: 'Resource ID', value: data.id },
-    ];
-
-    const attributeColumns = this.formatAttributes(data.attributes);
-    
-    const rawDataColumn = {
-      column: 'Raw Data',
-      value: JSON.stringify(webhook, null, 2)
-    };
-
-    return {
-      cells: [...baseColumns, ...attributeColumns, rawDataColumn]
-    };
-  }
-
-  private formatAttributes(attributes: Record<string, any>): Array<{ column: string; value: any }> {
+  const formatAttributes = (attributes: Record<string, any>): Array<{ column: string; value: any }> => {
     const columns: Array<{ column: string; value: any }> = [];
     
     if (attributes.name) {
@@ -96,16 +47,63 @@ export class CodaClient {
     }
 
     return columns;
-  }
+  };
 
-  async testConnection(): Promise<boolean> {
-    const url = `${this.baseUrl}/docs/${this.docId}/tables/${this.tableId}`;
+  const createRow = async (rowData: CodaRowData): Promise<CodaApiResponse> => {
+    const url = `${baseUrl}/docs/${docId}/tables/${tableId}/rows`;
+    
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiToken}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        rows: [rowData]
+      }),
+    });
+
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Coda API error: ${response.status} - ${error}`);
+    }
+
+    return response.json();
+  };
+
+  const formatWebhookForCoda = (webhook: WebhookPayload): CodaRowData => {
+    const data = webhook.payload.data;
+    const timestamp = new Date(webhook.created_at).toISOString();
+    
+    const baseColumns = [
+      { column: 'Webhook ID', value: webhook.id },
+      { column: 'Action', value: webhook.action },
+      { column: 'Organization ID', value: webhook.organization_id },
+      { column: 'Timestamp', value: timestamp },
+      { column: 'Resource Type', value: data.type },
+      { column: 'Resource ID', value: data.id },
+    ];
+
+    const attributeColumns = formatAttributes(data.attributes);
+    
+    const rawDataColumn = {
+      column: 'Raw Data',
+      value: JSON.stringify(webhook, null, 2)
+    };
+
+    return {
+      cells: [...baseColumns, ...attributeColumns, rawDataColumn]
+    };
+  };
+
+  const testConnection = async (): Promise<boolean> => {
+    const url = `${baseUrl}/docs/${docId}/tables/${tableId}`;
     
     try {
       const response = await fetch(url, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.apiToken}`,
+          'Authorization': `Bearer ${apiToken}`,
         },
       });
       
@@ -114,5 +112,11 @@ export class CodaClient {
       console.error('Coda connection test failed:', error);
       return false;
     }
-  }
+  };
+
+  return {
+    createRow,
+    formatWebhookForCoda,
+    testConnection
+  };
 }

@@ -12,6 +12,7 @@ dist/
 *.swp
 *.swo
 .DS_Store
+.claude/
 
 # Logs
 *.log

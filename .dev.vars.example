@@ -1,0 +1,10 @@
+# Example environment variables for local development
+# Copy this file to .dev.vars and fill in your actual values
+# DO NOT commit .dev.vars to version control
+
+# Required: Your Coda API token from https://coda.io/account
+CODA_API_TOKEN=your-coda-api-token-here
+
+# Optional: Planning Center webhook signature secret for validation
+# If you set this, make sure it matches the secret in Planning Center
+WEBHOOK_SECRET=your-webhook-secret-here

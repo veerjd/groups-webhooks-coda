@@ -1,6 +1,6 @@
-import { WebhookHandler } from './handlers/webhook';
+import { createWebhookHandler } from './handlers/webhook';
 import { validateWebhookSignature } from './utils/validation';
-import { ErrorResponse, SuccessResponse } from './utils/responses';
+import { createErrorResponse, createSuccessResponse } from './utils/responses';
 
 export interface Env {
   WEBHOOK_SECRET?: string;
@@ -19,11 +19,11 @@ export default {
     }
 
     if (url.pathname !== '/webhook') {
-      return new ErrorResponse('Not Found', 404);
+      return createErrorResponse('Not Found', 404);
     }
 
     if (request.method !== 'POST') {
-      return new ErrorResponse('Method Not Allowed', 405);
+      return createErrorResponse('Method Not Allowed', 405);
     }
 
     try {
@@ -32,23 +32,23 @@ export default {
       if (env.WEBHOOK_SECRET) {
         const signature = request.headers.get('X-PCO-Webhook-Signature');
         if (!signature || !validateWebhookSignature(rawBody, signature, env.WEBHOOK_SECRET)) {
-          return new ErrorResponse('Unauthorized', 401);
+          return createErrorResponse('Unauthorized', 401);
         }
       }
 
       const payload = JSON.parse(rawBody);
-      const handler = new WebhookHandler(env);
+      const handler = createWebhookHandler(env);
       const result = await handler.handle(payload, ctx);
       
-      return new SuccessResponse(result);
+      return createSuccessResponse(result);
     } catch (error) {
       console.error('Webhook processing error:', error);
       
       if (error instanceof SyntaxError) {
-        return new ErrorResponse('Invalid JSON payload', 400);
+        return createErrorResponse('Invalid JSON payload', 400);
       }
       
-      return new ErrorResponse('Internal Server Error', 500);
+      return createErrorResponse('Internal Server Error', 500);
     }
   },
 };
