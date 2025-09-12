@@ -14,8 +14,8 @@ name = "planning-center-groups-webhook-staging"
 # 
 # Set these as plain text vars or secrets:
 [vars]
-CODA_DOC_ID = "YOUR_CODA_DOC_ID"
-CODA_TABLE_ID = "YOUR_CODA_TABLE_ID"
+CODA_DOC_ID = "dNKK06PRQBP"
+CODA_TABLE_ID = "tut8-Cju"
 
 # KV Namespaces (if needed for storing webhook data)
 # [[kv_namespaces]]
