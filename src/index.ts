@@ -13,6 +13,15 @@ export interface Env {
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    // Log full request details
+    Logger.logDetailedPayload('Incoming Request', {
+      method: request.method,
+      url: request.url,
+      headers: Object.fromEntries(request.headers.entries()),
+      cf: request.cf,
+      request
+    });
+    
     const url = new URL(request.url);
     
     if (url.pathname === '/health') {
