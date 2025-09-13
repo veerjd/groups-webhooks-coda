@@ -155,10 +155,21 @@ export function createWebhookHandler(env: Env) {
 
     Logger.logWebhookProcessing(payload.action, payload.organization_id);
     
+    // Log the main data object
+    if (payload.payload?.data) {
+      Logger.logDetailedPayload('Main Webhook Data Object', {
+        type: payload.payload.data.type,
+        id: payload.payload.data.id,
+        attributes: payload.payload.data.attributes,
+        relationships: payload.payload.data.relationships
+      });
+    }
+    
     // Log full payload details including relationships and included data
     if (payload.payload?.included) {
       Logger.logDetailedPayload('Included Relationships Data', payload.payload.included);
     }
+    
     // Log any additional metadata if present in the payload structure
     if ((payload as any).meta) {
       Logger.logDetailedPayload('Webhook Metadata', (payload as any).meta);

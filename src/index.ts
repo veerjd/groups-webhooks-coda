@@ -13,18 +13,16 @@ export interface Env {
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
-    // Log full request details
+    const url = new URL(request.url);
+    
+    // Log basic request details (without body)
     Logger.logDetailedPayload('Incoming Request', {
       method: request.method,
       url: request.url,
+      pathname: url.pathname,
       headers: Object.fromEntries(request.headers.entries()),
-      cf: request.cf,
-      data: await request.json(),
-      bodyMethod: request.body?.getReader().constructor.name,
-      bodyText: await request.text()
+      cf: request.cf
     });
-    
-    const url = new URL(request.url);
     
     if (url.pathname === '/health') {
       return new Response('OK', { status: 200 });
@@ -41,6 +39,9 @@ export default {
     try {
       const rawBody = await request.text();
       
+      // Log the raw body immediately after receiving it
+      Logger.logDetailedPayload('Raw Webhook Body (unparsed)', rawBody);
+      
       if (env.WEBHOOK_SECRET) {
         const signature = request.headers.get('X-PCO-Webhook-Signature');
         if (!signature || !validateWebhookSignature(rawBody, signature, env.WEBHOOK_SECRET)) {
@@ -53,6 +54,9 @@ export default {
       
       // Log the full webhook payload and request details
       Logger.logWebhookReceived(request, payload);
+      
+      // Also log just the payload separately for clarity
+      Logger.logDetailedPayload('Parsed Webhook Payload', payload);
       
       const handler = createWebhookHandler(env);
       const result = await handler.handle(payload, ctx);
