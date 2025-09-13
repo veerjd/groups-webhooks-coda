@@ -19,7 +19,9 @@ export default {
       url: request.url,
       headers: Object.fromEntries(request.headers.entries()),
       cf: request.cf,
-      request
+      data: await request.json(),
+      bodyMethod: request.body?.getReader().constructor.name,
+      bodyText: await request.text()
     });
     
     const url = new URL(request.url);
