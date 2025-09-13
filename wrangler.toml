@@ -2,11 +2,22 @@ name = "groups-webhooks-coda"
 main = "src/index.ts"
 compatibility_date = "2024-12-01"
 
+# Enable detailed logging
+[observability]
+enabled = true
+
+# Log all requests and responses
+logpush = true
+
 [env.production]
 name = "planning-center-groups-webhook-prod"
+[env.production.observability]
+enabled = true
 
 [env.staging]
 name = "planning-center-groups-webhook-staging"
+[env.staging.observability]
+enabled = true
 
 # Environment variables (set these via wrangler secret)
 # wrangler secret put WEBHOOK_SECRET
